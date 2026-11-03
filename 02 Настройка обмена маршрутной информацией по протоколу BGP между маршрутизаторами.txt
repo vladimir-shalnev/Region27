@@ -1,0 +1,102 @@
+
+===GW-CORE===
+
+apt-get update && apt-get install -y frr
+sed -i 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
+sed -i 's/isisd=no/isisd=yes/g' /etc/frr/daemons
+systemctl enable --now frr
+vtysh
+	conf t
+	router isis 1
+	is-type level-1
+	net 49.0000.0440.4404.4044.00
+	metric-style wide
+	interface dummy0
+	ip router isis 1
+	interface ens19
+	ip router isis 1
+	interface ens20
+	ip router isis 1
+	interface ens21
+	ip router isis 1
+	router bgp 64499
+	bgp router-id 44.44.44.44
+	no bgp ebgp-requires-policy
+	neighbor 11.11.11.11 remote-as 64499
+	neighbor 22.22.22.22 remote-as 64499
+	neighbor 33.33.33.33 remote-as 64499
+	address-family ipv4 unicast
+	neighbor 11.11.11.11 default-originate
+	neighbor 22.22.22.22 default-originate
+	neighbor 33.33.33.33 default-originate
+	do wr
+	
+	
+===GW-1===
+
+en
+conf t
+	router isis 1
+	is-type level-1
+	net 49.0000.0110.1101.1011.00
+	metric-style wide
+	interface int0
+	ip router isis 1
+	interface loopback.0
+	ip router isis 1
+	router bgp 64499
+	bgp router-id 11.11.11.11
+	neighbor 44.44.44.44 remote-as 64499
+	neighbor 44.44.44.44 update-source loopback.0
+	^z
+wr
+show ip route {isis, bgp}
+
+===GW-2===	
+
+en
+conf t
+	router isis 1
+	is-type level-1
+	net 49.0000.0220.2202.2022.00
+	metric-style wide
+	interface int0
+	ip router isis 1
+	interface loopback.0
+	ip router isis 1
+	router bgp 64499
+	bgp router-id 22.22.22.22
+	neighbor 44.44.44.44 remote-as 64499
+	neighbor 44.44.44.44 update-source loopback.0
+	^z
+wr
+show ip route {isis, bgp}
+
+===GW-3===	
+
+en
+conf t
+	router isis 1
+	is-type level-1
+	net 49.0000.0330.3303.3033.00
+	metric-style wide
+	interface int0
+	ip router isis 1
+	interface loopback.0
+	ip router isis 1
+	router bgp 64499
+	bgp router-id 33.33.33.33
+	neighbor 44.44.44.44 remote-as 64499
+	neighbor 44.44.44.44 update-source loopback.0
+	^z
+wr
+show ip route {isis, bgp}
+
+===GW-CORE===
+
+ip -c r
+vtysh
+	sh ip route
+	show ip bgp summary
+	
+	

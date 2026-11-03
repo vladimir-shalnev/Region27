@@ -1,0 +1,175 @@
+
+===GW-CORE===
+
+hostnamectl set-hostname gw-core.ssa.prof; exec bash
+useradd master -G wheel
+passwd master
+echo "master ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/master
+
+  ip -c -br a
+  
+echo 'BOOTPROTO=dhcp' >> /etc/net/ifaces/ens18/options
+mkdir -p /etc/net/ifaces/ens{19..21}
+echo 'TYPE=eth' | tee /etc/net/ifaces/ens{19..21}/options
+echo "84.212.78.1/27" > /etc/net/ifaces/ens19/ipv4address
+echo "63.27.18.1/23" > /etc/net/ifaces/ens20/ipv4address
+echo "34.95.33.1/24" > /etc/net/ifaces/ens21/ipv4address
+mkdir /etc/net/ifaces/dummy0
+echo "TYPE=dummy" > /etc/net/ifaces/dummy0/options
+echo "44.44.44.44/32" > /etc/net/ifaces/dummy0/ipv4address
+sed -i "s/net.ipv4.ip_forward = 0/net.ipv4.ip_forward = 1/g" /etc/net/sysctl.conf
+
+systemctl restart network && ip -br -c a
+
+===GW-1===
+
+en
+conf t
+	ho gw-1
+	ip domain-name ssa.prof
+
+	service password-encryption
+	username master
+	password P@ssw0rd
+	role admin
+	
+en
+conf t
+	interface int0
+	description "to GW-CORE"
+	ip a 84.212.78.10/27
+	port ge0
+	service-instance GW-CORE
+	encapsulation u
+	connect ip interface int0
+	interface loopback.0
+	ip address 11.11.11.11/32
+	username admin
+	deactivate 
+	^z
+sh ip int br
+ping 84.212.78.1 count 2
+wr
+	
+===GW-2===	
+	
+en
+conf t
+	ho gw-2
+	ip domain-name ssa.prof
+	service password-encryption
+	username master
+	password P@ssw0rd
+	role admin
+	interface int0
+	description "to GW-CORE"
+	ip a 63.27.18.57/23
+	port ge0
+	service-instance GW-CORE
+	encapsulation u
+	connect ip interface int0
+	interface loopback.0
+	ip address 22.22.22.22/32
+	username admin
+	dea 
+	
+en
+sh ip int br
+ping 63.27.18.1 count 2
+wr
+
+===GW-3===	
+	
+en
+conf t
+	ho gw-3
+	ip domain-name ssa.prof
+	service password-encryption
+	username master
+	password P@ssw0rd
+	role admin
+	interface int0
+	description "to GW-CORE"
+	ip address 34.95.33.229/24
+	port ge0
+	service-instance GW-CORE
+	encapsulation u
+	connect ip interface int0
+	interface loopback.0
+	ip address 33.33.33.33/32
+	username admin
+	dea 	
+en
+sh ip int br
+ping 34.95.33.1 count 2
+wr
+	
+===PROVIDER-SW===	
+
+hostnamectl set-hostname provider-sw.ssa.prof; exec bash
+useradd master
+passwd master
+
+===PROVIDER-GW===
+
+en
+conf t
+	ho provider-gw
+	ip domain-name ssa.prof
+	service password-encryption
+	username master
+	password P@ssw0rd
+	role admin
+	^z
+wr
+	
+===ZSPD-SW===
+
+hostnamectl set-hostname zspd-sw.ssa.prof; exec bash
+useradd master
+passwd master
+
+===COD-GW===
+
+en
+conf t
+	ho cod-gw
+	ip domain-name ssa.prof
+	service password-encryption
+	username master
+	password P@ssw0rd
+	role admin
+	^z
+wr
+
+===COD-SW-CORE===
+
+hostnamectl set-hostname cod-sw-core.cod.ssa.prof; exec bash
+useradd master -G wheel
+passwd master
+echo "master ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/master
+
+===COD-ADMIN===
+
+hostnamectl set-hostname cod-admin.cod.ssa.prof; exec bash
+useradd master -G wheel
+passwd master
+echo "master ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/master
+
+===COD-SRV===
+
+hostnamectl set-hostname cod-srv.cod.ssa.prof; exec bash
+useradd master -G wheel
+passwd master
+echo "master ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/master
+
+===DATA===
+
+hostnamectl set-hostname data; exec bash
+
+===PUB===
+
+hostnamectl set-hostname pub; exec bash
+
+
+

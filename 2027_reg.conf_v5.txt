@@ -1,0 +1,224 @@
+﻿
+#>---------------------------------- Параметры конфигурации ----------------------------------<#
+
+#///::::::::::::::::::::::::::| Конфигурации ролей прав доступа |:::::::::::::::::::::::::::\\\#
+
+config_access_roles[Competitor_Reg]='Pool.Audit VM.Audit VM.Console VM.PowerMgmt'
+
+
+#///%%%%%%%%%%%%%%%%%%% Конфигурации шаблонов настроек виртуальных машин %%%%%%%%%%%%%%%%%%%\\\#
+
+config_templates[Alt-Server_11.1]='
+        templ_descr = Базовый шаблон для Альт Сервер 11.1
+        os_descr    = Альт Сервер 11.1
+        tags        = alt-server11.1
+        ostype      = l26
+        serial0     = socket
+		agent       = 1
+		tablet      = 0
+        scsihw      = virtio-scsi-single
+        cores       = 1
+        memory      = 1024
+        boot_disk_0 = /root/images/AltSRV11.1.qcow2
+'
+
+config_templates[Alt-Workstation_11.2]='
+        templ_descr = Базовый шаблон для Альт Рабочая Станция 10.2
+        os_descr    = Альт Рабочая Станция 11.2
+        tags        = alt_workstation_11.2
+        ostype      = l26
+        serial0     = socket
+        agent       = 1
+        scsihw      = virtio-scsi-single
+        cores       = 2
+        memory      = 4096
+        boot_disk_0 = /root/images/AltWKS11.2.qcow2
+'
+
+config_templates[Alt-Virtualization_11.1]='
+        templ_descr = Базовый шаблон для Альт Виртуализация 11.1
+        os_descr    = Альт Виртуализация 11.1
+        tags        = alt_virtualization_11.1
+        ostype      = l26
+        agent       = 1
+        scsihw      = virtio-scsi-single
+        cpu         = host
+        cores       = 4
+        memory      = 8192
+        boot_disk_0 = /root/images/AltVirt.qcow2
+'
+config_templates[EcoRouterOS]='
+        templ_descr = Базовый шаблон для EcoRouterOS pesto
+        os_descr    = EcoRouterOS
+        tags        = ecorouter-pesto
+        ostype      = l26
+        machine     = q35
+        cpu         = host
+        cores       = 2
+        cpulimit    = 1
+        cpuunits    = 75
+		balloon	    = 0
+        memory      = 4096
+        serial0     = socket
+        tablet      = 0
+		vga	        = serial0
+        disk_type   = ide
+        netifs_type = e1000
+        netifs_mac  = BC:24:11:32
+        network_0   = { bridge=vmbr0, state=down }		
+        boot_disk_0 = /root/images/ecorouter-pesto.qcow2
+'
+config_templates[Ideco-NGFW]='
+        templ_descr = Базовый шаблон для Ideco NGFW
+        os_descr    = Ideco NGFW
+        tags        = ideco-ngfw-novum-v23
+        ostype      = l26
+        serial0     = socket
+		bios        = ovmf
+        tablet      = 0
+        scsihw      = virtio-scsi-single
+        cpu         = host
+        cores       = 4
+        memory      = 16384
+        boot_disk_0 = /root/images/ideco-ngfw-novum-v23.qcow2
+'
+
+#///=========================== Конфигурация варианта установки ===========================\\\#
+
+config_stand_1_var[stand_config]='
+        description        = Модуль Б. Настройка технических и программных средств информационно-коммуникационных систем
+        group_display_desc = Региональный чемпионат Сетевое и системное администрирование. Модуль Б
+        pool_name          = Region_09.02.06-2027_stand_B-{0}
+        pool_desc          = Стенд участника регионального чемпионата "Сетевое и системное администрирование". Стенд B-{0}
+        pool_access_role   = Competitor_Reg
+        access_user_name   = Competitor-B{0}
+        access_user_desc   = Учетная запись участника чемпионата B-{0}
+'
+config_stand_1_var[vm_1]='
+        name            = GW-CORE
+        config_template = Alt-Server_11.1
+        startup         = order=1,up=5,down=30
+        firewall_opt    = { enable=1, dhcp=1 }
+        network_0       = { bridge=inet, firewall=0 }
+        network_1       = 🖧: GW-CORE <-> GW-1
+        network_2       = 🖧: GW-CORE <-> GW-2
+		network_3       = 🖧: GW-CORE <-> GW-3
+'
+
+config_stand_1_var[vm_2]='
+        name            = GW-1
+        config_template = EcoRouterOS
+        startup         = order=1,up=10,down=0
+        network_1       = 🖧: GW-CORE <-> GW-1
+        network_2       = 🖧: GW-1 <-> COD-GW
+'
+
+config_stand_1_var[vm_3]='
+        name            = GW-2
+        config_template = EcoRouterOS
+        startup         = order=1,up=10,down=0
+        network_1       = 🖧: GW-CORE <-> GW-2
+        network_2       = 🖧: GW-2 <-> ZSPD-SW
+'
+
+config_stand_1_var[vm_4]='
+        name            = GW-3
+        config_template = EcoRouterOS
+        startup         = order=1,up=10,down=0
+        network_1       = 🖧: GW-CORE <-> GW-3
+        network_2       = 🖧: GW-3 <-> PROVIDER-SW
+'
+
+config_stand_1_var[vm_5]='
+        name            = PROVIDER-SW
+        config_template = Alt-Server_11.1
+        startup         = order=2,up=10,down=30
+        network_0       = 🖧: GW-3 <-> PROVIDER-SW
+        network_1       = 🖧: PROVIDER-SW <-> PROVIDER-GW
+		network_2       = 🖧: PROVIDER-SW <-> PROVIDER-GW
+'
+
+config_stand_1_var[vm_6]='
+        name            = PROVIDER-GW
+        config_template = EcoRouterOS
+        startup         = order=1,up=10,down=0
+        network_1       = 🖧: PROVIDER-SW <-> PROVIDER-GW
+		network_2       = 🖧: PROVIDER-SW <-> PROVIDER-GW
+'
+
+config_stand_1_var[vm_7]='
+        name            = ZSPD-SW
+        config_template = Alt-Server_11.1
+        startup         = order=3,up=8,down=30
+        network_1       = 🖧: GW-2 <-> ZSPD-SW
+        network_2       = 🖧: ZSPD-SW <-> ZSPD-GW
+'
+		
+config_stand_1_var[vm_8]='
+        name            = ZSPD-FW
+        config_template = Ideco-NGFW
+        startup         = order=3,up=60,down=60
+        network_0       = 🖧: ZSPD-SW <-> ZSPD-GW
+'		
+
+config_stand_1_var[vm_9]='
+        name            = COD-GW
+        config_template = EcoRouterOS
+        startup         = order=1,up=10,down=0
+        network_1       = 🖧: GW-1 <-> COD-GW
+        network_2       = 🖧: COD-SW-CORE <-> COD-GW
+'
+
+config_stand_1_var[vm_10]='
+        name            = COD-SW-CORE
+        config_template = Alt-Server_11.1
+        startup         = order=3,up=8,down=30
+        network_0       = 🖧: COD-SW-CORE <-> COD-GW
+        network_1       = 🖧: COD-SW-CORE <-> COD-ADMIN
+        network_2       = 🖧: COD-SW-CORE <-> DATA
+        network_3       = 🖧: COD-SW-CORE <-> COD-SRV
+        network_4       = 🖧: COD-SW-CORE <-> PUB
+        network_5       = 🖧: COD-SW-CORE <-> NODE
+'
+
+config_stand_1_var[vm_11]='
+        name            = COD-ADMIN
+        config_template = Alt-Workstation_11.2
+        startup         = order=3,up=8,down=30
+        network_0       = 🖧: COD-SW-CORE <-> COD-ADMIN
+'
+
+config_stand_1_var[vm_12]='
+        name            = COD-SRV
+        config_template = Alt-Server_11.1
+        startup         = order=3,up=8,down=30
+        network_0       = 🖧: COD-SW-CORE <-> COD-SRV
+'
+
+
+config_stand_1_var[vm_13]='
+        name            = DATA
+        config_template = Alt-Server_11.1
+        startup         = order=3,up=8,down=30
+        disk_1          = 10 GB
+        disk_2          = 10 GB
+        network_0       = 🖧: COD-SW-CORE <-> DATA
+'
+
+config_stand_1_var[vm_14]='
+        name            = PUB
+        config_template = Alt-Server_11.1
+        startup         = order=3,up=8,down=30
+        iso_0           = local:iso/addons.iso
+        network_0       = 🖧: COD-SW-CORE <-> PUB
+'
+
+config_stand_1_var[vm_15]='
+        name            = NODE
+        config_template = Alt-Virtualization_11.1
+        startup         = order=3,up=8,down=30
+        iso_0           = local:iso/addons.iso
+        network_0       = 🖧: COD-SW-CORE <-> NODE
+'
+
+#<------------------------------ Конец параметров конфигурации ------------------------------->#

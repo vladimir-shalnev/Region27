@@ -1,0 +1,54 @@
+
+===GW-1===
+
+en
+conf t
+	interface int1
+	description "to COD-GW"
+	ip address 78.23.0.97/29
+	port ge1
+	service-instance ISP <---------------------не нравится
+	enc u
+	connect ip interface int1
+	router bgp 64499 <---------------------в 2 часть?
+	network 78.23.0.96/29
+	^z
+wr
+
+===GW-2===
+
+en
+conf t
+	interface int1
+	description "to ZSPD-SW"
+	ip address 78.23.0.65/27
+	port ge1
+	service-instance ISP <---------------------не нравится
+	encapsulation dot1q 17 exact
+	rewrite pop 1
+	connect ip interface int1
+	router bgp 64499
+	network 78.23.0.64/27
+	^z
+wr
+
+===GW-3===
+
+en
+conf t
+	interface int1
+	description "to PROVIDER-SW"
+	ip address 78.23.0.1/26
+	port ge1
+	service-instance ISP <---------------------не нравится
+	encapsulation dot1q 25 exact
+	rewrite pop 1
+	connect ip interface int1
+	router bgp 64499
+	network 78.23.0.0/26
+	^z
+wr
+
+===GW-CORE===
+
+ip -c r | grep 'bgp'

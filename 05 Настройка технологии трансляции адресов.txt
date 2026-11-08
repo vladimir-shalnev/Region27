@@ -1,0 +1,28 @@
+
+===GW-CORE===
+
+nft add table ip nat
+nft add chain ip nat postrouting '{ type nat hook postrouting priority 0; }'
+nft add rule ip nat postrouting ip saddr 78.23.0.0/16 oifname "ens18" counter masquerade
+nft add rule ip nat postrouting ip saddr 212.78.93.0/24 oifname "ens18" counter masquerade
+nft list ruleset | tee -a /etc/nftables/nftables.nft 
+nft flush ruleset
+systemctl enable --now nftables.service 
+nft list ruleset
+
+===COD-GW===
+
+en
+conf t
+	interface int0 
+	ip nat outside 
+	interface COD 
+	ip nat inside 
+	interface DATA
+	ip nat inside 
+	ip nat pool COD 192.168.10.1-192.168.10.254
+	ip nat pool DATA 192.168.20.1-192.168.20.254
+	ip nat source dynamic inside-to-outside pool COD overload interface int0
+	ip nat source dynamic inside-to-outside pool DATA overload interface int0
+	^z
+wr
